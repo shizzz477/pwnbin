@@ -1,20 +1,22 @@
+import datetime
+import getopt
+import gzip
+import sys
 import time
 import urllib2
-import datetime
-import sys, getopt
-from bs4 import BeautifulSoup
 from StringIO import StringIO
-import gzip
+
+from bs4 import BeautifulSoup
+
 
 def main(argv):
-
-	length 									= 0
-	time_out 								= False
-	found_keywords							= []
-	paste_list 								= set([])
-	root_url 								= 'http://pastebin.com'
-	raw_url 								= 'http://pastebin.com/raw/'
-	start_time								= datetime.datetime.now()
+	length = 0
+	time_out = False
+	found_keywords = []
+	paste_list = set([])
+	root_url = 'http://pastebin.com'
+	raw_url = 'http://pastebin.com/raw/'
+	start_time = datetime.datetime.now()
 	file_name, keywords, append, run_time, match_total, crawl_total = initialize_options(argv)
 
 	print "\nCrawling %s Press ctrl+c to save file to %s" % (root_url, file_name)
@@ -25,19 +27,19 @@ def main(argv):
 
 			#	Get pastebin home page html
 			root_html = BeautifulSoup(fetch_page(root_url), 'html.parser')
-			
+
 			#	For each paste in the public pastes section of home page
 			for paste in find_new_pastes(root_html):
-				
+
 				#	look at length of paste_list prior to new element
 				length = len(paste_list)
 				paste_list.add(paste)
 
 				#	If the length has increased the paste is unique since a set has no duplicate entries
 				if len(paste_list) > length:
-					
+
 					#	Add the pastes url to found_keywords if it contains keywords
-					raw_paste = raw_url+paste
+					raw_paste = raw_url + paste
 					found_keywords = find_keywords(raw_paste, found_keywords, keywords)
 
 				else:
@@ -49,7 +51,8 @@ def main(argv):
 			if time_out:
 				time.sleep(2)
 
-			sys.stdout.write("\rCrawled total of %d Pastes, Keyword matches %d" % (len(paste_list), len(found_keywords)))
+			sys.stdout.write(
+				"\rCrawled total of %d Pastes, Keyword matches %d" % (len(paste_list), len(found_keywords)))
 			sys.stdout.flush()
 
 			if run_time and (start_time + datetime.timedelta(seconds=run_time)) < datetime.datetime.now():
@@ -69,11 +72,11 @@ def main(argv):
 				write_out(found_keywords, append, file_name)
 				sys.exit()
 
-	# 	On keyboard interupt
+	# On keyboard interupt
 	except KeyboardInterrupt:
 		write_out(found_keywords, append, file_name)
 
-	#	If http request returns an error and 
+	# If http request returns an error and
 	except urllib2.HTTPError, err:
 		if err.code == 404:
 			print "\n\nError 404: Pastes not found!"
@@ -83,7 +86,7 @@ def main(argv):
 			print "\n\nYou\'re on your own on this one! Error code ", err.code
 		write_out(found_keywords, append, file_name)
 
-	#	If http request returns an error and 
+	# If http request returns an error and
 	except urllib2.URLError, err:
 		print "\n\nYou\'re on your own on this one! Error code ", err
 		write_out(found_keywords, append, file_name)
@@ -105,17 +108,19 @@ def write_out(found_keywords, append, file_name):
 	else:
 		print "\n\nNo relevant pastes found, exiting\n\n"
 
+
 def find_new_pastes(root_html):
 	new_pastes = []
 
 	div = root_html.find('div', {'id': 'menu_2'})
 	ul = div.find('ul', {'class': 'right_menu'})
-	
+
 	for li in ul.findChildren():
 		if li.find('a'):
 			new_pastes.append(str(li.find('a').get('href')).replace("/", ""))
 
 	return new_pastes
+
 
 def find_keywords(raw_url, found_keywords, keywords):
 	paste = fetch_page(raw_url)
@@ -128,6 +133,7 @@ def find_keywords(raw_url, found_keywords, keywords):
 
 	return found_keywords
 
+
 def fetch_page(page):
 	response = urllib2.urlopen(page)
 	if response.info().get('Content-Encoding') == 'gzip':
@@ -137,16 +143,17 @@ def fetch_page(page):
 	else:
 		return response.read()
 
+
 def initialize_options(argv):
-	keywords 			= ['ssh', 'pass', 'key', 'token']
-	file_name 			= 'log.txt'
-	append 				= False
-	run_time 			= 0
-	match_total			= None
-	crawl_total	 		= None
+	keywords = ['ssh', 'pass', 'key', 'token']
+	file_name = 'log.txt'
+	append = False
+	run_time = 0
+	match_total = None
+	crawl_total = None
 
 	try:
-		opts, args = getopt.getopt(argv,"h:k:o:t:n:m:a")
+		opts, args = getopt.getopt(argv, "h:k:o:t:n:m:a")
 	except getopt.GetoptError:
 		print 'pwnbin.py -k <keyword1>,<keyword2>,<keyword3>..... -o <outputfile>'
 		sys.exit(2)
@@ -183,6 +190,7 @@ def initialize_options(argv):
 				sys.exit()
 
 	return file_name, keywords, append, run_time, match_total, crawl_total
+
 
 if __name__ == "__main__":
 	main(sys.argv[1:])
