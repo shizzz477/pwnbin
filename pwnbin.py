@@ -1,4 +1,5 @@
-import datetime
+#!/usr/bin/env python
+# import datetime
 import getopt
 import gzip
 import sys
